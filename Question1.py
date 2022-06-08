@@ -40,15 +40,14 @@ def gaussian_noise(img):
     noise = random_noise(img, 'gaussian', mean=0, var=0.02)
     return noise
 
-def wiener_filtering(o, n):
-    o_ps = np.abs(o)**2
-    n_ps = np.abs(n)**2
-    #k = np.sum(n_ps)/np.sum(o_ps)
-    k = 1
-    combined = np.fft.fftshift(np.fft.fft2(o+n))
-    back_fft = combined/(1 + ((n_ps/o_ps)*k))
-    return np.abs(np.fft.ifft2(back_fft))
-
+def mmse(original_c, degraded_c, h):
+    o = np.fft.fftshift(np.fft.fft2(original_c))
+    s_f = np.abs(o) ** 2
+    s_n = np.abs(np.fft.fftshift(np.fft.fft2(degraded_c))) ** 2
+    denominator = np.abs(h)**2 + (s_n/s_f)
+    Hw = np.conj(h) / denominator
+    Fhat = Hw * o
+    return Fhat
 
 img = cv2.imread('images project 2/bird.jpg')
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -88,16 +87,7 @@ inverse_noise = inverse_noise/np.max(inverse_noise)
 plt.imshow(inverse_noise)
 plt.show()
 
-def mmse(original_c, degraded_c, h):
-    o = np.fft.fftshift(np.fft.fft2(original_c))
-    s_f = np.abs(o) ** 2
-    s_n = np.abs(np.fft.fftshift(np.fft.fft2(degraded_c))) ** 2
-    denominator = np.abs(h)**2 + (s_n/s_f)
-    Hw = np.conj(h) / denominator
-    Fhat = Hw * o
-    return Fhat
-
-
+# mmse
 (o_ch1, o_ch2, o_ch3) = cv2.split(img)
 (noise_ch1, noise_ch2, noise_ch3) = cv2.split(g_noise)
 Fhat_1 = mmse(o_ch1, noise_ch1, 1)
